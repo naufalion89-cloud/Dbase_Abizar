@@ -1,0 +1,1932 @@
+<!DOCTYPE html>
+<html lang="id" class="h-full">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JDATA WIFI - Manajemen Pelanggan & Keuangan</title>
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          colors: {
+            brand: {
+              50: '#f0f7ff',
+              100: '#e0effe',
+              500: 'var(--brand-500, #3b82f6)',
+              600: 'var(--brand-600, #2563eb)',
+              700: 'var(--brand-700, #1d4ed8)',
+            }
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- Font Awesome -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.2/css/all.min.css">
+  <!-- SheetJS (XLSX) for Excel Import & Export -->
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+    
+    * {
+      font-family: 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Live Themes Definition */
+    :root {
+      --brand-gradient: linear-gradient(135deg, #2563eb 0%, #1d4ed8 100%);
+      --brand-accent: #2563eb;
+      --bg-surface: #f8fafc;
+      --card-bg: #ffffff;
+      --text-main: #0f172a;
+    }
+
+    [data-theme="emerald"] {
+      --brand-gradient: linear-gradient(135deg, #059669 0%, #047857 100%);
+      --brand-accent: #059669;
+      --bg-surface: #f0fdf4;
+      --card-bg: #ffffff;
+      --text-main: #064e3b;
+    }
+
+    [data-theme="cyberpunk"] {
+      --brand-gradient: linear-gradient(135deg, #7c3aed 0%, #db2777 100%);
+      --brand-accent: #db2777;
+      --bg-surface: #0f172a;
+      --card-bg: #1e293b;
+      --text-main: #f8fafc;
+    }
+
+    [data-theme="sunset"] {
+      --brand-gradient: linear-gradient(135deg, #ea580c 0%, #d97706 100%);
+      --brand-accent: #ea580c;
+      --bg-surface: #fffbeb;
+      --card-bg: #ffffff;
+      --text-main: #7c2d12;
+    }
+
+    [data-theme="midnight"] {
+      --brand-gradient: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      --brand-accent: #38bdf8;
+      --bg-surface: #0b1120;
+      --card-bg: #151e32;
+      --text-main: #f1f5f9;
+    }
+
+    .theme-gradient {
+      background: var(--brand-gradient);
+    }
+    .custom-scroll::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scroll::-webkit-scrollbar-thumb {
+      background: #cbd5e1;
+      border-radius: 9999px;
+    }
+    .glass-card {
+      background: rgba(255, 255, 255, 0.95);
+      backdrop-filter: blur(10px);
+    }
+    [data-theme="cyberpunk"] .glass-card, [data-theme="midnight"] .glass-card {
+      background: rgba(30, 41, 59, 0.95);
+      color: #f8fafc;
+    }
+  </style>
+</head>
+<body class="bg-slate-100 text-slate-900 min-h-screen antialiased custom-scroll select-none transition-colors duration-300" id="mainAppBody">
+
+  <div id="toastContainer" class="fixed top-5 right-5 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+  <div id="loginScreen" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-900 bg-opacity-95 p-4 transition-all">
+    <div class="w-full max-w-md bg-white rounded-3xl shadow-2xl p-8 transform transition-all border border-slate-100">
+      <div class="text-center mb-6">
+        <div class="w-24 h-24 mx-auto mb-4 rounded-2xl p-2 bg-slate-50 border shadow-inner flex items-center justify-center overflow-hidden" id="loginLogoPreview">
+          <i class="fa-solid fa-wifi text-4xl text-blue-600"></i>
+        </div>
+        <h2 class="text-2xl font-black text-slate-800 tracking-tight" id="loginAppName">JDATA WIFI NETWORK</h2>
+        <p class="text-sm text-slate-500 mt-1 font-medium">Sistem Manajemen & Billing Pelanggan</p>
+      </div>
+
+      <form id="formLogin" onsubmit="handleLoginSubmit(event)" class="space-y-4">
+        <div>
+          <label class="block text-xs font-bold text-slate-600 uppercase tracking-wider mb-2">Password Dashboard</label>
+          <div class="relative">
+            <span class="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
+              <i class="fa-solid fa-lock"></i>
+            </span>
+            <input type="password" id="inputPassword" required placeholder="Masukkan password admin..." 
+              class="w-full pl-10 pr-10 py-3 rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-600 font-medium text-slate-800 transition">
+            <button type="button" onclick="togglePasswordVisibility('inputPassword', this)" class="absolute inset-y-0 right-0 pr-3 flex items-center text-slate-400 hover:text-slate-600">
+              <i class="fa-solid fa-eye"></i>
+            </button>
+          </div>
+        </div>
+
+        <button type="submit" id="btnLoginSubmit" class="w-full py-3.5 px-4 rounded-xl text-white font-bold bg-blue-600 hover:bg-blue-700 shadow-lg shadow-blue-500/30 transition transform active:scale-95 flex items-center justify-center gap-2">
+          <span>Buka Dashboard</span>
+          <i class="fa-solid fa-arrow-right"></i>
+        </button>
+      </form>
+      
+      <div class="mt-6 text-center">
+        <span class="text-xs text-slate-400">Sistem Keamanan Akses JDATA &copy; 2026</span>
+      </div>
+    </div>
+  </div>
+
+  <div id="mainDashboard" class="hidden min-h-screen flex flex-col md:flex-row">
+    
+    <!-- Sidebar Desktop -->
+    <aside class="w-full md:w-64 theme-gradient text-white flex-shrink-0 flex flex-col justify-between shadow-xl">
+      <div>
+        <!-- Brand Header & Logo Editor -->
+        <div class="p-6 border-b border-white/10 flex flex-col items-center text-center">
+          <div class="relative group mb-3">
+            <div id="sidebarLogo" class="w-20 h-20 rounded-2xl bg-white/20 border-2 border-white/40 shadow-md flex items-center justify-center overflow-hidden">
+              <i class="fa-solid fa-wifi text-3xl"></i>
+            </div>
+            <button onclick="openLogoModal()" title="Ubah Logo" class="absolute -bottom-1 -right-1 bg-amber-400 text-slate-900 rounded-full p-2 text-xs shadow hover:bg-amber-300 transition">
+              <i class="fa-solid fa-camera"></i>
+            </button>
+          </div>
+          <h1 id="appTitleText" class="font-black text-lg tracking-wider">JDATA WIFI</h1>
+          <span class="text-[11px] bg-white/20 px-2.5 py-0.5 rounded-full mt-1 font-semibold uppercase tracking-wider">Admin Panel</span>
+        </div>
+
+        <!-- Navigation Menus -->
+        <nav class="p-4 space-y-1.5">
+          <button onclick="switchTab('dashboard')" id="nav-dashboard" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition bg-white/20">
+            <i class="fa-solid fa-chart-pie w-5 text-center"></i>
+            <span>Dashboard</span>
+          </button>
+          <button onclick="switchTab('pelanggan')" id="nav-pelanggan" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition hover:bg-white/10">
+            <i class="fa-solid fa-users w-5 text-center"></i>
+            <span>Daftar Pelanggan</span>
+          </button>
+          <button onclick="switchTab('kasmasuk')" id="nav-kasmasuk" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition hover:bg-white/10">
+            <i class="fa-solid fa-arrow-down-long w-5 text-center"></i>
+            <span>Kas Masuk</span>
+          </button>
+          <button onclick="switchTab('kaskeluar')" id="nav-kaskeluar" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition hover:bg-white/10">
+            <i class="fa-solid fa-arrow-up-long w-5 text-center"></i>
+            <span>Kas Keluar</span>
+          </button>
+          <button onclick="switchTab('paket')" id="nav-paket" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition hover:bg-white/10">
+            <i class="fa-solid fa-cube w-5 text-center"></i>
+            <span>Paket Internet</span>
+          </button>
+          <button onclick="switchTab('pengaturan')" id="nav-pengaturan" class="nav-item w-full flex items-center gap-3 px-4 py-3 rounded-xl font-semibold text-sm transition hover:bg-white/10">
+            <i class="fa-solid fa-gear w-5 text-center"></i>
+            <span>Pengaturan & Bank</span>
+          </button>
+        </nav>
+      </div>
+
+      <!-- Live Theme Selector & Logout -->
+      <div class="p-4 border-t border-white/10 space-y-3">
+        <div>
+          <label class="text-[11px] font-bold uppercase tracking-wider text-white/70 block mb-1.5">Pilihan Tema Live</label>
+          <div class="grid grid-cols-5 gap-1.5">
+            <button onclick="setTheme('default')" title="Blue Default" class="h-6 rounded-md bg-blue-600 border-2 border-white/60 hover:scale-105 transition"></button>
+            <button onclick="setTheme('emerald')" title="Emerald Pro" class="h-6 rounded-md bg-emerald-600 border-2 border-white/60 hover:scale-105 transition"></button>
+            <button onclick="setTheme('sunset')" title="Sunset Orange" class="h-6 rounded-md bg-orange-600 border-2 border-white/60 hover:scale-105 transition"></button>
+            <button onclick="setTheme('cyberpunk')" title="Cyberpunk Purple" class="h-6 rounded-md bg-purple-600 border-2 border-white/60 hover:scale-105 transition"></button>
+            <button onclick="setTheme('midnight')" title="Midnight Dark" class="h-6 rounded-md bg-slate-800 border-2 border-white/60 hover:scale-105 transition"></button>
+          </div>
+        </div>
+        <button onclick="logoutSession()" class="w-full py-2.5 px-3 rounded-xl bg-red-500/20 hover:bg-red-500 text-white text-xs font-bold transition flex items-center justify-center gap-2">
+          <i class="fa-solid fa-right-from-bracket"></i>
+          <span>Keluar Sesi</span>
+        </button>
+      </div>
+    </aside>
+
+    <!-- Main Content Body -->
+    <main class="flex-1 flex flex-col h-screen overflow-hidden">
+      <!-- Top Bar -->
+      <header class="h-16 glass-card border-b border-slate-200 px-6 flex items-center justify-between z-10">
+        <div class="flex items-center gap-3">
+          <h2 id="currentSectionTitle" class="text-lg font-black text-slate-800 tracking-tight">Dashboard Ringkasan</h2>
+        </div>
+        <div class="flex items-center gap-3">
+          <button onclick="refreshDataFromServer()" title="Sync Data" class="p-2 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-sm flex items-center gap-2 px-3 transition">
+            <i class="fa-solid fa-rotate" id="refreshIcon"></i>
+            <span class="hidden sm:inline">Sinkronisasi</span>
+          </button>
+          <div class="text-right hidden sm:block">
+            <p class="text-xs font-bold text-slate-700" id="headerDateTime">Senin, 31 Agu 2026</p>
+            <span class="text-[10px] text-emerald-600 font-extrabold flex items-center gap-1 justify-end">
+              <span class="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> Live Online
+            </span>
+          </div>
+        </div>
+      </header>
+
+      <!-- Scrollable Main Container -->
+      <div class="flex-1 overflow-y-auto p-4 md:p-6 custom-scroll space-y-6">
+
+        <!-- ================= TAB 1: DASHBOARD ================= -->
+        <section id="tab-dashboard" class="space-y-6">
+          <!-- Metric Cards -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+            <!-- Total Pelanggan -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Pelanggan</p>
+                <h3 class="text-2xl font-black text-slate-800 mt-1" id="statTotalCust">0</h3>
+                <span class="text-xs text-blue-600 font-bold" id="statActiveCust">0 Aktif</span>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-users"></i>
+              </div>
+            </div>
+            
+            <!-- Belum Bayar -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Tunggakan / Tempo</p>
+                <h3 class="text-2xl font-black text-red-600 mt-1" id="statUnpaidCust">0</h3>
+                <span class="text-xs text-red-500 font-bold">Belum Lunas</span>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-red-50 text-red-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-circle-exclamation"></i>
+              </div>
+            </div>
+
+            <!-- Total Kas Masuk -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Total Kas Masuk</p>
+                <h3 class="text-xl font-black text-emerald-600 mt-1" id="statTotalIn">Rp 0</h3>
+                <span class="text-xs text-emerald-500 font-semibold" id="statCountIn">0 Transaksi</span>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-arrow-trend-up"></i>
+              </div>
+            </div>
+
+            <!-- Saldo Kas Bersih -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 flex items-center justify-between">
+              <div>
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-wider">Saldo Bersih (Kas)</p>
+                <h3 class="text-xl font-black text-indigo-600 mt-1" id="statNetBalance">Rp 0</h3>
+                <span class="text-xs text-slate-500 font-semibold" id="statTotalOut">Keluar: Rp 0</span>
+              </div>
+              <div class="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 flex items-center justify-center text-xl">
+                <i class="fa-solid fa-wallet"></i>
+              </div>
+            </div>
+          </div>
+
+          <!-- Quick Actions & Summary Table -->
+          <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Pelanggan Jatuh Tempo Terdekat -->
+            <div class="lg:col-span-2 glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80">
+              <div class="flex items-center justify-between mb-4">
+                <div>
+                  <h4 class="font-bold text-slate-800">Tagihan & Jatuh Tempo Terdekat</h4>
+                  <p class="text-xs text-slate-400">Daftar pelanggan yang perlu dikirimkan tagihan WhatsApp</p>
+                </div>
+                <button onclick="switchTab('pelanggan')" class="text-xs font-bold text-blue-600 hover:underline">Lihat Semua &rarr;</button>
+              </div>
+              <div class="overflow-x-auto">
+                <table class="w-full text-left text-xs">
+                  <thead class="bg-slate-50 text-slate-500 font-bold uppercase border-b">
+                    <tr>
+                      <th class="p-3">Pelanggan</th>
+                      <th class="p-3">Paket & Harga</th>
+                      <th class="p-3">Jatuh Tempo</th>
+                      <th class="p-3">Status</th>
+                      <th class="p-3 text-center">Kirim Notif</th>
+                    </tr>
+                  </thead>
+                  <tbody id="tableUpcomingDue" class="divide-y divide-slate-100">
+                    <!-- Dynamic -->
+                  </tbody>
+                </table>
+              </div>
+            </div>
+
+            <!-- Ringkasan Paket & Info Bank -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200/80 flex flex-col justify-between">
+              <div>
+                <h4 class="font-bold text-slate-800 mb-3">Rekening Pembayaran Aktif</h4>
+                <div class="space-y-2.5 text-xs">
+                  <div class="p-3 bg-blue-50/60 rounded-xl border border-blue-100 flex items-center justify-between">
+                    <div>
+                      <span class="font-extrabold text-blue-900 block">Bank BRI</span>
+                      <p class="text-slate-600 font-mono" id="disp_bri_acc">1234-01-000000-50-1</p>
+                      <span class="text-[10px] text-slate-400" id="disp_bri_name">a/n JDATA</span>
+                    </div>
+                    <i class="fa-solid fa-building-columns text-blue-600 text-lg"></i>
+                  </div>
+                  <div class="p-3 bg-amber-50/60 rounded-xl border border-amber-100 flex items-center justify-between">
+                    <div>
+                      <span class="font-extrabold text-amber-900 block">Bank Mandiri</span>
+                      <p class="text-slate-600 font-mono" id="disp_mandiri_acc">140-00-1234567-8</p>
+                      <span class="text-[10px] text-slate-400" id="disp_mandiri_name">a/n JDATA</span>
+                    </div>
+                    <i class="fa-solid fa-money-check-dollar text-amber-600 text-lg"></i>
+                  </div>
+                  <div class="p-3 bg-cyan-50/60 rounded-xl border border-cyan-100 flex items-center justify-between">
+                    <div>
+                      <span class="font-extrabold text-cyan-900 block">E-Wallet & QRIS</span>
+                      <p class="text-slate-600">DANA / GoPay / QRIS All Merchant</p>
+                    </div>
+                    <i class="fa-solid fa-qrcode text-cyan-600 text-lg"></i>
+                  </div>
+                </div>
+              </div>
+              <div class="mt-4 pt-3 border-t">
+                <button onclick="switchTab('pengaturan')" class="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl text-xs font-bold transition text-center">
+                  Edit Akun Pembayaran
+                </button>
+              </div>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-pelanggan" class="hidden space-y-4">
+          <!-- Action Bar -->
+          <div class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div class="flex items-center gap-2 flex-1 min-w-[260px]">
+              <div class="relative w-full">
+                <i class="fa-solid fa-magnifying-glass absolute left-3 top-3 text-slate-400 text-sm"></i>
+                <input type="text" id="searchCustomerInput" oninput="filterCustomerTable()" placeholder="Cari nama, No WA, alamat, atau ID..." 
+                  class="w-full pl-9 pr-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
+              </div>
+              <select id="filterStatusPay" onchange="filterCustomerTable()" class="py-2 px-3 rounded-xl border border-slate-200 text-xs font-semibold focus:outline-none">
+                <option value="ALL">Semua Bayar</option>
+                <option value="Lunas">Lunas</option>
+                <option value="Belum Bayar">Belum Bayar</option>
+              </select>
+            </div>
+
+            <div class="flex items-center gap-2 flex-wrap">
+              <button onclick="openCustomerModal()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Tambah Pelanggan</span>
+              </button>
+              <button onclick="exportCustomersToExcel()" class="px-3 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition" title="Export Excel">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Export Excel</span>
+              </button>
+              <label class="px-3 py-2 bg-slate-800 hover:bg-slate-900 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 cursor-pointer shadow-sm transition" title="Import Excel">
+                <i class="fa-solid fa-file-arrow-up"></i>
+                <span>Import Excel</span>
+                <input type="file" id="excelCustomerFileInput" accept=".xlsx, .xls" onchange="importCustomersFromExcel(event)" class="hidden">
+              </label>
+            </div>
+          </div>
+
+          <!-- Customer Data Table -->
+          <div class="glass-card rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b">
+                  <tr>
+                    <th class="p-3">Foto</th>
+                    <th class="p-3">ID & Nama</th>
+                    <th class="p-3">WhatsApp</th>
+                    <th class="p-3">Alamat</th>
+                    <th class="p-3">Paket & Tarif</th>
+                    <th class="p-3">Jatuh Tempo</th>
+                    <th class="p-3">Status</th>
+                    <th class="p-3">Bayar</th>
+                    <th class="p-3 text-center">Aksi & WhatsApp</th>
+                  </tr>
+                </thead>
+                <tbody id="tableCustomerBody" class="divide-y divide-slate-100 font-medium">
+                  <!-- Dynamic Rows -->
+                </tbody>
+              </table>
+            </div>
+            <!-- Empty state -->
+            <div id="customerEmptyState" class="hidden py-12 text-center text-slate-400">
+              <i class="fa-solid fa-user-slash text-4xl mb-2"></i>
+              <p class="text-sm font-semibold">Belum ada data pelanggan.</p>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-kasmasuk" class="hidden space-y-4">
+          <div class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-slate-800">Catatan Kas Masuk (Pemasukan)</h3>
+              <p class="text-xs text-slate-400">Pembayaran bulanan WiFi, instalasi baru, atau pendapatan lainnya</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openCashInModal()" class="px-3.5 py-2 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition">
+                <i class="fa-solid fa-plus"></i>
+                <span>Tambah Kas Masuk</span>
+              </button>
+              <button onclick="exportCashInToExcel()" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Export Excel</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b">
+                  <tr>
+                    <th class="p-3">ID Trx</th>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Kategori</th>
+                    <th class="p-3">Keterangan / Pelanggan</th>
+                    <th class="p-3">Metode</th>
+                    <th class="p-3 text-right">Jumlah</th>
+                    <th class="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableCashInBody" class="divide-y divide-slate-100 font-medium">
+                  <!-- Dynamic -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-kaskeluar" class="hidden space-y-4">
+          <div class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-slate-800">Catatan Kas Keluar (Pengeluaran)</h3>
+              <p class="text-xs text-slate-400">Biaya bandwidth ISP upstream, pembelian kabel/router, teknisi, dll.</p>
+            </div>
+            <div class="flex gap-2">
+              <button onclick="openCashOutModal()" class="px-3.5 py-2 bg-red-600 hover:bg-red-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition">
+                <i class="fa-solid fa-minus"></i>
+                <span>Tambah Kas Keluar</span>
+              </button>
+              <button onclick="exportCashOutToExcel()" class="px-3 py-2 bg-slate-700 hover:bg-slate-800 text-white rounded-xl text-xs font-bold flex items-center gap-1.5 shadow-sm transition">
+                <i class="fa-solid fa-file-excel"></i>
+                <span>Export Excel</span>
+              </button>
+            </div>
+          </div>
+
+          <div class="glass-card rounded-2xl shadow-sm border border-slate-200 overflow-hidden">
+            <div class="overflow-x-auto">
+              <table class="w-full text-left text-xs">
+                <thead class="bg-slate-50 text-slate-600 font-bold uppercase tracking-wider border-b">
+                  <tr>
+                    <th class="p-3">ID Trx</th>
+                    <th class="p-3">Tanggal</th>
+                    <th class="p-3">Kategori</th>
+                    <th class="p-3">Keterangan Biaya</th>
+                    <th class="p-3">Sumber Dana</th>
+                    <th class="p-3 text-right">Jumlah</th>
+                    <th class="p-3 text-center">Aksi</th>
+                  </tr>
+                </thead>
+                <tbody id="tableCashOutBody" class="divide-y divide-slate-100 font-medium">
+                  <!-- Dynamic -->
+                </tbody>
+              </table>
+            </div>
+          </div>
+        </section>
+
+        <section id="tab-paket" class="hidden space-y-4">
+          <div class="glass-card p-4 rounded-2xl shadow-sm border border-slate-200 flex flex-wrap items-center justify-between gap-3">
+            <div>
+              <h3 class="font-bold text-slate-800">Daftar & Tarif Paket Internet</h3>
+              <p class="text-xs text-slate-400">Ubah kecepatan dan harga paket internet wifi</p>
+            </div>
+            <button onclick="addNewPackageRow()" class="px-3.5 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-xs font-bold flex items-center gap-2 shadow-sm transition">
+              <i class="fa-solid fa-plus"></i>
+              <span>Tambah Paket Baru</span>
+            </button>
+          </div>
+
+          <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4" id="packageCardsContainer">
+            <!-- Dynamic package cards -->
+          </div>
+          
+          <div class="text-right">
+            <button onclick="saveAllPackages()" class="px-5 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-md transition">
+              <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Perubahan Paket
+            </button>
+          </div>
+        </section>
+
+        <section id="tab-pengaturan" class="hidden space-y-6">
+          <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+            <!-- Company Info & Password -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-building text-blue-600"></i> Informasi Usaha & Keamanan
+              </h3>
+              
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Nama Usaha WiFi</label>
+                <input type="text" id="settingAppName" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Password Akses Baru</label>
+                <input type="text" id="settingAdminPass" placeholder="Ganti password login..." class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
+                <span class="text-[10px] text-slate-400">Kosongkan jika tidak ingin mengubah password dashboard.</span>
+              </div>
+
+              <div class="pt-2">
+                <label class="block text-xs font-bold text-slate-600 mb-1">Logo Perusahaan</label>
+                <div class="flex items-center gap-3">
+                  <div id="settingLogoPreview" class="w-16 h-16 rounded-xl border p-1 flex items-center justify-center bg-slate-50 overflow-hidden">
+                    <i class="fa-solid fa-wifi text-2xl text-blue-600"></i>
+                  </div>
+                  <button onclick="openLogoModal()" class="px-3 py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 text-xs font-bold rounded-xl transition">
+                    <i class="fa-solid fa-camera mr-1"></i> Ubah Logo (Kamera / Galeri)
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <!-- Payment Channels Info for WA Generator -->
+            <div class="glass-card p-5 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+              <h3 class="font-bold text-slate-800 text-sm flex items-center gap-2">
+                <i class="fa-solid fa-wallet text-emerald-600"></i> Rekening Bank & E-Wallet (Untuk Pesan WhatsApp)
+              </h3>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">No Rekening BRI</label>
+                  <input type="text" id="settingBriAcc" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Atas Nama (BRI)</label>
+                  <input type="text" id="settingBriName" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">No Rekening Mandiri</label>
+                  <input type="text" id="settingMandiriAcc" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Atas Nama (Mandiri)</label>
+                  <input type="text" id="settingMandiriName" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium">
+                </div>
+              </div>
+
+              <div class="grid grid-cols-2 gap-3">
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nomor DANA</label>
+                  <input type="text" id="settingDanaNum" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium">
+                </div>
+                <div>
+                  <label class="block text-xs font-bold text-slate-600 mb-1">Nomor GoPay</label>
+                  <input type="text" id="settingGopayNum" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium">
+                </div>
+              </div>
+
+              <div>
+                <label class="block text-xs font-bold text-slate-600 mb-1">Informasi QRIS All Merchant</label>
+                <input type="text" id="settingQrisInfo" class="w-full px-3 py-2 rounded-xl border border-slate-200 text-xs font-medium" placeholder="QRIS All Payment scan di kantor/petugas">
+              </div>
+            </div>
+          </div>
+
+          <div class="text-right">
+            <button onclick="saveApplicationSettings()" class="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl text-xs shadow-lg transition">
+              <i class="fa-solid fa-floppy-disk mr-1"></i> Simpan Semua Pengaturan
+            </button>
+          </div>
+        </section>
+
+      </div>
+    </main>
+  </div>
+
+
+  <!-- 1. MODAL TAMBAH/EDIT PELANGGAN -->
+  <div id="customerModal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-slate-900/70 p-4 backdrop-blur-xs">
+    <div class="bg-white w-full max-w-2xl rounded-3xl shadow-2xl p-6 max-h-[90vh] overflow-y-auto custom-scroll">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <h3 class="font-black text-slate-800 text-base" id="custModalTitle">Tambah Pelanggan Baru</h3>
+        <button onclick="closeCustomerModal()" class="text-slate-400 hover:text-slate-600 text-lg">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+
+      <form id="formCustomer" onsubmit="handleSaveCustomer(event)" class="space-y-4 text-xs">
+        <input type="hidden" id="cust_ID">
+
+        <!-- Foto Pelanggan (Camera / Gallery) -->
+        <div class="p-3 bg-slate-50 rounded-2xl border flex items-center gap-4">
+          <div class="w-20 h-20 rounded-2xl bg-slate-200 overflow-hidden flex items-center justify-center border" id="custPhotoPreview">
+            <i class="fa-solid fa-user text-3xl text-slate-400"></i>
+          </div>
+          <div class="space-y-2">
+            <p class="font-bold text-slate-700">Foto Pelanggan / Lokasi Rumah</p>
+            <div class="flex gap-2">
+              <button type="button" onclick="startCameraCapture('custPhoto')" class="px-3 py-1.5 bg-blue-600 text-white rounded-lg font-bold flex items-center gap-1 shadow">
+                <i class="fa-solid fa-camera"></i> Kamera
+              </button>
+              <label class="px-3 py-1.5 bg-slate-700 text-white rounded-lg font-bold flex items-center gap-1 cursor-pointer shadow">
+                <i class="fa-solid fa-image"></i> Galeri
+                <input type="file" accept="image/*" onchange="handleFileImageUpload(event, 'custPhotoPreview', 'custPhotoHidden')" class="hidden">
+              </label>
+            </div>
+            <input type="hidden" id="custPhotoHidden">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nama Lengkap Pelanggan *</label>
+            <input type="text" id="cust_Nama" required placeholder="Contoh: Budi Santoso" class="w-full p-2.5 border rounded-xl font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Nomor WhatsApp *</label>
+            <input type="text" id="cust_WA" required placeholder="Contoh: 081234567890" class="w-full p-2.5 border rounded-xl font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Alamat Lengkap / Blok Rumah *</label>
+          <textarea id="cust_Alamat" rows="2" required placeholder="Jl. Mawar No. 12 RT 01/02..." class="w-full p-2.5 border rounded-xl font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none"></textarea>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Paket Internet *</label>
+            <select id="cust_PaketSelect" onchange="onCustomerPackageChange()" required class="w-full p-2.5 border rounded-xl font-medium focus:ring-2 focus:ring-blue-600 focus:outline-none">
+              <!-- Dynamic -->
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Tarif / Harga Paket (Rp) *</label>
+            <input type="number" id="cust_Harga" required class="w-full p-2.5 border rounded-xl font-bold text-blue-700 focus:ring-2 focus:ring-blue-600 focus:outline-none">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Tanggal Pemasangan</label>
+            <input type="date" id="cust_TglPasang" required class="w-full p-2.5 border rounded-xl font-medium">
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Tanggal Jatuh Tempo Bulanan</label>
+            <input type="date" id="cust_TglTempo" required class="w-full p-2.5 border rounded-xl font-medium">
+          </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Status Pelanggan</label>
+            <select id="cust_StatusPelanggan" class="w-full p-2.5 border rounded-xl font-medium">
+              <option value="Aktif">Aktif</option>
+              <option value="Isolir">Isolir / Suspend</option>
+              <option value="Nonaktif">Nonaktif / Berhenti</option>
+            </select>
+          </div>
+          <div>
+            <label class="block font-bold text-slate-700 mb-1">Status Pembayaran Bulan Ini</label>
+            <select id="cust_StatusBayar" class="w-full p-2.5 border rounded-xl font-medium">
+              <option value="Belum Bayar">Belum Bayar</option>
+              <option value="Lunas">Lunas</option>
+            </select>
+          </div>
+        </div>
+
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Catatan Tambahan (Opsional)</label>
+          <input type="text" id="cust_Catatan" placeholder="Kondisi ONT, nomor port ODP, dll." class="w-full p-2.5 border rounded-xl font-medium">
+        </div>
+
+        <div class="flex justify-end gap-2 pt-4 border-t">
+          <button type="button" onclick="closeCustomerModal()" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl hover:bg-slate-200 transition">Batal</button>
+          <button type="submit" id="btnSaveCust" class="px-5 py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow-md transition flex items-center gap-2">
+            <i class="fa-solid fa-floppy-disk"></i>
+            <span>Simpan Pelanggan</span>
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 2. MODAL KAS MASUK -->
+  <div id="cashInModal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-slate-900/70 p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <h3 class="font-black text-slate-800 text-base">Tambah Transaksi Kas Masuk</h3>
+        <button onclick="closeCashInModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveCashIn(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Tanggal</label>
+          <input type="date" id="in_Tanggal" required class="w-full p-2.5 border rounded-xl font-medium">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Kategori Pemasukan</label>
+          <select id="in_Kategori" class="w-full p-2.5 border rounded-xl font-medium">
+            <option value="Iuran Bulanan">Iuran Bulanan WiFi</option>
+            <option value="Biaya Pasang Baru">Biaya Pasang Baru / PSB</option>
+            <option value="Pindah Jalur / Perbaikan">Pindah Jalur / Perbaikan</option>
+            <option value="Lainnya">Lainnya</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Pilih Pelanggan (Jika Iuran Bulanan)</label>
+          <select id="in_CustSelect" onchange="onCashInCustSelectChange()" class="w-full p-2.5 border rounded-xl font-medium">
+            <option value="">-- Bukan Pembayaran Pelanggan Terdaftar --</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Keterangan</label>
+          <input type="text" id="in_Keterangan" required placeholder="Contoh: Pembayaran WiFi bulan Agustus" class="w-full p-2.5 border rounded-xl font-medium">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Jumlah Nominal (Rp)</label>
+          <input type="number" id="in_Jumlah" required class="w-full p-2.5 border rounded-xl font-black text-emerald-600">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Metode Penerimaan</label>
+          <select id="in_Metode" class="w-full p-2.5 border rounded-xl font-medium">
+            <option value="Cash / Tunai">Cash / Tunai</option>
+            <option value="Transfer BRI">Transfer Bank BRI</option>
+            <option value="Transfer Mandiri">Transfer Bank Mandiri</option>
+            <option value="DANA">DANA</option>
+            <option value="GoPay">GoPay</option>
+            <option value="QRIS">QRIS All Merchant</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t">
+          <button type="button" onclick="closeCashInModal()" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl">Batal</button>
+          <button type="submit" class="px-5 py-2 bg-emerald-600 text-white font-bold rounded-xl hover:bg-emerald-700 shadow-md">Simpan Pemasukan</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 3. MODAL KAS KELUAR -->
+  <div id="cashOutModal" class="fixed inset-0 z-40 hidden flex items-center justify-center bg-slate-900/70 p-4">
+    <div class="bg-white w-full max-w-md rounded-3xl shadow-2xl p-6">
+      <div class="flex items-center justify-between pb-3 border-b mb-4">
+        <h3 class="font-black text-slate-800 text-base">Tambah Transaksi Kas Keluar</h3>
+        <button onclick="closeCashOutModal()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+      <form onsubmit="handleSaveCashOut(event)" class="space-y-4 text-xs">
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Tanggal</label>
+          <input type="date" id="out_Tanggal" required class="w-full p-2.5 border rounded-xl font-medium">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Kategori Pengeluaran</label>
+          <select id="out_Kategori" class="w-full p-2.5 border rounded-xl font-medium">
+            <option value="Bandwidth Upstream ISP">Bandwidth Upstream / Dedicated ISP</option>
+            <option value="Perangkat (Router/ONT/Kabel)">Perangkat Jaringan (Router, ONT, FO)</option>
+            <option value="Gaji / Upah Teknisi">Gaji / Upah Teknisi</option>
+            <option value="Operasional / Listrik / Bensin">Operasional / Listrik / Bensin</option>
+            <option value="Lainnya">Pengeluaran Lainnya</option>
+          </select>
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Keterangan Detail Biaya</label>
+          <input type="text" id="out_Keterangan" required placeholder="Contoh: Beli kabel Dropcore 1 Roll 1000m" class="w-full p-2.5 border rounded-xl font-medium">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Jumlah Nominal (Rp)</label>
+          <input type="number" id="out_Jumlah" required class="w-full p-2.5 border rounded-xl font-black text-red-600">
+        </div>
+        <div>
+          <label class="block font-bold text-slate-700 mb-1">Sumber Dana</label>
+          <select id="out_Sumber" class="w-full p-2.5 border rounded-xl font-medium">
+            <option value="Kas Utama">Kas Utama (Cash)</option>
+            <option value="Rekening BRI">Rekening BRI</option>
+            <option value="Rekening Mandiri">Rekening Mandiri</option>
+          </select>
+        </div>
+        <div class="flex justify-end gap-2 pt-4 border-t">
+          <button type="button" onclick="closeCashOutModal()" class="px-4 py-2 bg-slate-100 text-slate-600 font-bold rounded-xl">Batal</button>
+          <button type="submit" class="px-5 py-2 bg-red-600 text-white font-bold rounded-xl hover:bg-red-700 shadow-md">Simpan Pengeluaran</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- 4. MODAL UBAH LOGO PERUSAHAAN -->
+  <div id="logoModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/80 p-4">
+    <div class="bg-white w-full max-w-sm rounded-3xl shadow-2xl p-6 text-center">
+      <h3 class="font-black text-slate-800 text-base mb-1">Ubah Logo Perusahaan</h3>
+      <p class="text-xs text-slate-400 mb-4">Gunakan kamera langsung atau ambil dari galeri</p>
+
+      <div class="w-28 h-28 mx-auto mb-4 rounded-2xl border-2 border-dashed border-slate-300 p-2 flex items-center justify-center overflow-hidden bg-slate-50" id="logoModalPreview">
+        <i class="fa-solid fa-wifi text-4xl text-blue-600"></i>
+      </div>
+
+      <div class="grid grid-cols-2 gap-2 mb-4 text-xs">
+        <button onclick="startCameraCapture('companyLogo')" class="py-2.5 px-3 bg-blue-600 text-white rounded-xl font-bold flex items-center justify-center gap-1 shadow">
+          <i class="fa-solid fa-camera"></i> Kamera
+        </button>
+        <label class="py-2.5 px-3 bg-slate-800 text-white rounded-xl font-bold flex items-center justify-center gap-1 cursor-pointer shadow">
+          <i class="fa-solid fa-images"></i> Galeri
+          <input type="file" accept="image/*" onchange="handleFileImageUpload(event, 'logoModalPreview', 'logoModalHidden')" class="hidden">
+        </label>
+      </div>
+      <input type="hidden" id="logoModalHidden">
+
+      <div class="flex justify-end gap-2 pt-3 border-t text-xs">
+        <button onclick="closeLogoModal()" class="w-full py-2 bg-slate-100 text-slate-600 font-bold rounded-xl">Batal</button>
+        <button onclick="saveCompanyLogo()" class="w-full py-2 bg-blue-600 text-white font-bold rounded-xl hover:bg-blue-700 shadow">Simpan Logo</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 5. MODAL LIVE CAMERA CAPTURE -->
+  <div id="cameraModal" class="fixed inset-0 z-50 hidden flex items-center justify-center bg-slate-900/90 p-4">
+    <div class="bg-white w-full max-w-lg rounded-3xl shadow-2xl p-5 flex flex-col items-center">
+      <div class="w-full flex justify-between items-center pb-2 border-b mb-3">
+        <span class="text-xs font-bold uppercase tracking-wider text-slate-700">Ambil Foto Kamera</span>
+        <button onclick="stopCameraStream()" class="text-slate-400 hover:text-slate-600"><i class="fa-solid fa-xmark text-lg"></i></button>
+      </div>
+
+      <div class="w-full h-64 bg-black rounded-2xl overflow-hidden relative mb-4">
+        <video id="webcamVideo" autoplay playsinline class="w-full h-full object-cover"></video>
+        <canvas id="webcamCanvas" class="hidden"></canvas>
+      </div>
+
+      <div class="flex gap-3 w-full">
+        <button onclick="stopCameraStream()" class="w-1/2 py-2.5 bg-slate-100 text-slate-700 font-bold rounded-xl text-xs">Tutup</button>
+        <button onclick="takeSnapshot()" class="w-1/2 py-2.5 bg-blue-600 text-white font-bold rounded-xl text-xs hover:bg-blue-700 shadow-md flex items-center justify-center gap-1.5">
+          <i class="fa-solid fa-camera"></i> Jepret Foto
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // State Aplikasi Global
+    let APP_STATE = {
+      settings: {},
+      packages: [],
+      customers: [],
+      cashIn: [],
+      cashOut: [],
+      activeTheme: 'default',
+      cameraTarget: null,
+      localVideoStream: null
+    };
+
+    // Initialize on window load
+    window.addEventListener('DOMContentLoaded', () => {
+      // Pasang tanggal default hari ini
+      const todayStr = new Date().toISOString().split('T')[0];
+      if (document.getElementById('cust_TglPasang')) document.getElementById('cust_TglPasang').value = todayStr;
+      if (document.getElementById('cust_TglTempo')) document.getElementById('cust_TglTempo').value = todayStr;
+      if (document.getElementById('in_Tanggal')) document.getElementById('in_Tanggal').value = todayStr;
+      if (document.getElementById('out_Tanggal')) document.getElementById('out_Tanggal').value = todayStr;
+
+      // Load tema tersimpan di sessionStorage jika ada
+      const savedTheme = sessionStorage.getItem('jdata_theme') || 'default';
+      setTheme(savedTheme);
+
+      // Cek sesi login
+      const isLogged = sessionStorage.getItem('jdata_logged_in');
+      if (isLogged === 'true') {
+        document.getElementById('loginScreen').classList.add('hidden');
+        document.getElementById('mainDashboard').classList.remove('hidden');
+        refreshDataFromServer();
+      }
+    });
+
+    function showToast(message, type = 'info') {
+      const container = document.getElementById('toastContainer');
+      const toast = document.createElement('div');
+      const bgColors = {
+        success: 'bg-emerald-600 text-white',
+        error: 'bg-red-600 text-white',
+        info: 'bg-blue-600 text-white',
+        warning: 'bg-amber-500 text-slate-900'
+      };
+      
+      const icons = {
+        success: 'fa-check-circle',
+        error: 'fa-triangle-exclamation',
+        info: 'fa-info-circle',
+        warning: 'fa-bell'
+      };
+
+      toast.className = `${bgColors[type] || bgColors.info} px-4 py-3 rounded-2xl shadow-xl font-bold text-xs flex items-center gap-3 transition-all duration-300 pointer-events-auto transform translate-y-2 opacity-0`;
+      toast.innerHTML = `<i class="fa-solid ${icons[type] || 'fa-info-circle'} text-base"></i><span>${message}</span>`;
+      
+      container.appendChild(toast);
+      setTimeout(() => {
+        toast.classList.remove('translate-y-2', 'opacity-0');
+      }, 50);
+
+      setTimeout(() => {
+        toast.classList.add('opacity-0', 'translate-x-full');
+        setTimeout(() => toast.remove(), 300);
+      }, 3500);
+    }
+
+    function formatRupiah(num) {
+      return 'Rp ' + Number(num || 0).toLocaleString('id-ID');
+    }
+
+    function togglePasswordVisibility(inputId, btn) {
+      const input = document.getElementById(inputId);
+      const icon = btn.querySelector('i');
+      if (input.type === 'password') {
+        input.type = 'text';
+        icon.className = 'fa-solid fa-eye-slash';
+      } else {
+        input.type = 'password';
+        icon.className = 'fa-solid fa-eye';
+      }
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const passInput = document.getElementById('inputPassword').value;
+      const btn = document.getElementById('btnLoginSubmit');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Memverifikasi...';
+
+      // Panggil backend Google Apps Script jika tersedia
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Buka Dashboard</span> <i class="fa-solid fa-arrow-right"></i>';
+            if (res.success) {
+              sessionStorage.setItem('jdata_logged_in', 'true');
+              document.getElementById('loginScreen').classList.add('hidden');
+              document.getElementById('mainDashboard').classList.remove('hidden');
+              showToast('Selamat datang di Panel Admin JDATA', 'success');
+              refreshDataFromServer();
+            } else {
+              showToast(res.message || 'Password salah!', 'error');
+            }
+          })
+          .withFailureHandler((err) => {
+            btn.disabled = false;
+            btn.innerHTML = '<span>Buka Dashboard</span> <i class="fa-solid fa-arrow-right"></i>';
+            showToast('Gagal terhubung: ' + err.message, 'error');
+          })
+          .verifyLogin(passInput);
+      } else {
+        // Mode Demo Standalone Preview
+        if (passInput === 'admin123' || passInput === 'admin') {
+          sessionStorage.setItem('jdata_logged_in', 'true');
+          document.getElementById('loginScreen').classList.add('hidden');
+          document.getElementById('mainDashboard').classList.remove('hidden');
+          showToast('Login Berhasil (Mode Standalone Preview)', 'success');
+          loadMockData();
+        } else {
+          btn.disabled = false;
+          btn.innerHTML = '<span>Buka Dashboard</span> <i class="fa-solid fa-arrow-right"></i>';
+          showToast('Password salah! (Gunakan default: admin123)', 'error');
+        }
+      }
+    }
+
+    function logoutSession() {
+      sessionStorage.removeItem('jdata_logged_in');
+      document.getElementById('mainDashboard').classList.add('hidden');
+      document.getElementById('loginScreen').classList.remove('hidden');
+      document.getElementById('inputPassword').value = '';
+      showToast('Sesi telah diakhiri.', 'info');
+    }
+
+    function switchTab(tabId) {
+      const tabs = ['dashboard', 'pelanggan', 'kasmasuk', 'kaskeluar', 'paket', 'pengaturan'];
+      const titles = {
+        dashboard: 'Dashboard Ringkasan & Tagihan',
+        pelanggan: 'Manajemen Data Pelanggan WIFI',
+        kasmasuk: 'Buku Kas Masuk (Pemasukan)',
+        kaskeluar: 'Buku Kas Keluar (Pengeluaran)',
+        paket: 'Pengaturan Paket & Tarif Internet',
+        pengaturan: 'Pengaturan Usaha & Rekening Bank'
+      };
+
+      tabs.forEach(t => {
+        const tabEl = document.getElementById('tab-' + t);
+        const navEl = document.getElementById('nav-' + t);
+        if (tabEl) tabEl.classList.add('hidden');
+        if (navEl) navEl.classList.remove('bg-white/20');
+      });
+
+      const targetTab = document.getElementById('tab-' + tabId);
+      const targetNav = document.getElementById('nav-' + tabId);
+      if (targetTab) targetTab.classList.remove('hidden');
+      if (targetNav) targetNav.classList.add('bg-white/20');
+
+      document.getElementById('currentSectionTitle').textContent = titles[tabId] || 'JDATA WiFi';
+    }
+
+    function setTheme(themeName) {
+      APP_STATE.activeTheme = themeName;
+      sessionStorage.setItem('jdata_theme', themeName);
+      if (themeName === 'default') {
+        document.body.removeAttribute('data-theme');
+      } else {
+        document.body.setAttribute('data-theme', themeName);
+      }
+    }
+
+    function refreshDataFromServer() {
+      const icon = document.getElementById('refreshIcon');
+      if (icon) icon.classList.add('fa-spin');
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((data) => {
+            if (icon) icon.classList.remove('fa-spin');
+            if (data) {
+              APP_STATE.settings = data.settings || {};
+              APP_STATE.packages = data.packages || [];
+              APP_STATE.customers = data.customers || [];
+              APP_STATE.cashIn = data.cashIn || [];
+              APP_STATE.cashOut = data.cashOut || [];
+              renderAllViews();
+              showToast('Data berhasil disinkronkan', 'success');
+            }
+          })
+          .withFailureHandler((err) => {
+            if (icon) icon.classList.remove('fa-spin');
+            showToast('Gagal sinkron data: ' + err.message, 'error');
+          })
+          .getInitialAppData();
+      } else {
+        setTimeout(() => {
+          if (icon) icon.classList.remove('fa-spin');
+          loadMockData();
+          showToast('Data diperbarui (Demo Preview)', 'info');
+        }, 400);
+      }
+    }
+
+    function loadMockData() {
+      if (APP_STATE.customers.length === 0) {
+        APP_STATE.packages = [
+          { ID_Paket: 'PKG-01', Nama_Paket: 'Paket Hemat', Kecepatan: '10 Mbps', Harga: 100000 },
+          { ID_Paket: 'PKG-02', Nama_Paket: 'Paket Keluarga', Kecepatan: '20 Mbps', Harga: 150000 },
+          { ID_Paket: 'PKG-03', Nama_Paket: 'Paket Bisnis', Kecepatan: '50 Mbps', Harga: 250000 }
+        ];
+        APP_STATE.customers = [
+          {
+            ID_Pelanggan: 'JD-101001',
+            Nama_Pelanggan: 'Ahmad Ridwan',
+            No_WhatsApp: '081234567890',
+            Alamat: 'Perumahan Griya Asri Blok A No. 12',
+            Paket_Internet: 'Paket Keluarga (20 Mbps)',
+            Harga_Paket: 150000,
+            Tgl_Pemasangan: '2026-01-10',
+            Tgl_Jatuh_Tempo: '2026-08-10',
+            Status_Pelanggan: 'Aktif',
+            Status_Pembayaran: 'Belum Bayar',
+            Foto_Pelanggan: '',
+            Catatan: 'ONT Port 3 ODP-01'
+          },
+          {
+            ID_Pelanggan: 'JD-101002',
+            Nama_Pelanggan: 'Siti Nurhaliza',
+            No_WhatsApp: '085712345678',
+            Alamat: 'Jl. Pemuda No. 45 RT 02/05',
+            Paket_Internet: 'Paket Hemat (10 Mbps)',
+            Harga_Paket: 100000,
+            Tgl_Pemasangan: '2026-02-15',
+            Tgl_Jatuh_Tempo: '2026-08-15',
+            Status_Pelanggan: 'Aktif',
+            Status_Pembayaran: 'Lunas',
+            Foto_Pelanggan: '',
+            Catatan: 'Dekat tiang listrik PLN'
+          }
+        ];
+        APP_STATE.cashIn = [
+          { ID_Transaksi: 'KM-001', Tanggal: '2026-08-15', Kategori: 'Iuran Bulanan', Keterangan: 'Iuran Agustus Siti Nurhaliza', Jumlah: 100000, Metode_Bayar: 'Transfer BRI', ID_Pelanggan: 'JD-101002' }
+        ];
+        APP_STATE.cashOut = [
+          { ID_Transaksi: 'KK-001', Tanggal: '2026-08-01', Kategori: 'Bandwidth Upstream ISP', Keterangan: 'Langganan Dedicated Link Upstream', Jumlah: 800000, Sumber_Dana: 'Rekening BRI' }
+        ];
+        APP_STATE.settings = {
+          app_name: 'JDATA WIFI NETWORK',
+          bri_acc: '1234-01-000000-50-1',
+          bri_name: 'JDATA NETWORK',
+          mandiri_acc: '140-00-1234567-8',
+          mandiri_name: 'JDATA NETWORK',
+          dana_num: '081234567890',
+          gopay_num: '081234567890',
+          qris_info: 'QRIS All Merchant (BCA, Mandiri, Dana, GoPay, OVO)'
+        };
+      }
+      renderAllViews();
+    }
+
+    function renderAllViews() {
+      renderDashboardStats();
+      renderCustomerTable();
+      renderCashInTable();
+      renderCashOutTable();
+      renderPackagesList();
+      populateSettingsInputs();
+      updateAppLogos();
+    }
+
+    function renderDashboardStats() {
+      const totalCust = APP_STATE.customers.length;
+      const activeCust = APP_STATE.customers.filter(c => c.Status_Pelanggan === 'Aktif').length;
+      const unpaidCust = APP_STATE.customers.filter(c => c.Status_Pembayaran === 'Belum Bayar').length;
+      
+      const totalIn = APP_STATE.cashIn.reduce((sum, item) => sum + Number(item.Jumlah || 0), 0);
+      const totalOut = APP_STATE.cashOut.reduce((sum, item) => sum + Number(item.Jumlah || 0), 0);
+      const net = totalIn - totalOut;
+
+      document.getElementById('statTotalCust').textContent = totalCust;
+      document.getElementById('statActiveCust').textContent = `${activeCust} Aktif`;
+      document.getElementById('statUnpaidCust').textContent = unpaidCust;
+      document.getElementById('statTotalIn').textContent = formatRupiah(totalIn);
+      document.getElementById('statCountIn').textContent = `${APP_STATE.cashIn.length} Transaksi`;
+      document.getElementById('statNetBalance').textContent = formatRupiah(net);
+      document.getElementById('statTotalOut').textContent = `Keluar: ${formatRupiah(totalOut)}`;
+
+      // Render Upcoming Due Table
+      const dueTbody = document.getElementById('tableUpcomingDue');
+      dueTbody.innerHTML = '';
+      const unpaidList = APP_STATE.customers.filter(c => c.Status_Pembayaran === 'Belum Bayar').slice(0, 5);
+      
+      if (unpaidList.length === 0) {
+        dueTbody.innerHTML = '<tr><td colspan="5" class="p-4 text-center text-slate-400 font-semibold">Semua pelanggan telah lunas bulan ini!</td></tr>';
+      } else {
+        unpaidList.forEach(c => {
+          const tr = document.createElement('tr');
+          tr.className = 'hover:bg-slate-50 transition';
+          tr.innerHTML = `
+            <td class="p-3 font-bold text-slate-800">${c.Nama_Pelanggan}<br><span class="text-[10px] text-slate-400 font-normal">${c.ID_Pelanggan}</span></td>
+            <td class="p-3 font-semibold text-blue-600">${c.Paket_Internet}<br><span class="text-[10px] text-slate-500">${formatRupiah(c.Harga_Paket)}</span></td>
+            <td class="p-3 text-red-600 font-bold">${c.Tgl_Jatuh_Tempo || '-'}</td>
+            <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-100 text-red-700">Belum Bayar</span></td>
+            <td class="p-3 text-center">
+              <button onclick="sendWhatsAppBilling('${c.ID_Pelanggan}')" class="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-700 text-white rounded-xl text-xs font-bold flex items-center gap-1 mx-auto shadow-sm">
+                <i class="fa-brands fa-whatsapp text-sm"></i> Kirim Tagihan
+              </button>
+            </td>
+          `;
+          dueTbody.appendChild(tr);
+        });
+      }
+    }
+
+    function renderCustomerTable(filteredData = null) {
+      const data = filteredData || APP_STATE.customers;
+      const tbody = document.getElementById('tableCustomerBody');
+      const empty = document.getElementById('customerEmptyState');
+      tbody.innerHTML = '';
+
+      if (data.length === 0) {
+        empty.classList.remove('hidden');
+        return;
+      }
+      empty.classList.add('hidden');
+
+      data.forEach(c => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50/80 transition';
+        const isPaid = c.Status_Pembayaran === 'Lunas';
+        const isActive = c.Status_Pelanggan === 'Aktif';
+
+        const photoHtml = c.Foto_Pelanggan 
+          ? `<img src="${c.Foto_Pelanggan}" class="w-10 h-10 rounded-xl object-cover border shadow-sm cursor-pointer" onclick="viewFullImage('${c.Foto_Pelanggan}')">`
+          : `<div class="w-10 h-10 rounded-xl bg-slate-100 border flex items-center justify-center text-slate-400"><i class="fa-solid fa-user"></i></div>`;
+
+        tr.innerHTML = `
+          <td class="p-3">${photoHtml}</td>
+          <td class="p-3">
+            <span class="font-bold text-slate-800 block">${c.Nama_Pelanggan}</span>
+            <span class="text-[10px] text-slate-400 font-mono">${c.ID_Pelanggan}</span>
+          </td>
+          <td class="p-3 font-semibold text-slate-600 font-mono">
+            <a href="https://wa.me/${cleanPhone(c.No_WhatsApp)}" target="_blank" class="hover:text-emerald-600 flex items-center gap-1">
+              <i class="fa-brands fa-whatsapp text-emerald-500"></i> ${c.No_WhatsApp}
+            </a>
+          </td>
+          <td class="p-3 text-slate-600 max-w-[180px] truncate" title="${c.Alamat}">${c.Alamat}</td>
+          <td class="p-3">
+            <span class="font-bold text-blue-600 block">${c.Paket_Internet}</span>
+            <span class="text-slate-500 font-semibold text-[11px]">${formatRupiah(c.Harga_Paket)}</span>
+          </td>
+          <td class="p-3 font-bold text-slate-700">${c.Tgl_Jatuh_Tempo || '-'}</td>
+          <td class="p-3">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${isActive ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}">
+              ${c.Status_Pelanggan}
+            </span>
+          </td>
+          <td class="p-3">
+            <span class="px-2.5 py-1 rounded-full text-[10px] font-bold ${isPaid ? 'bg-blue-100 text-blue-700' : 'bg-red-100 text-red-700'}">
+              ${c.Status_Pembayaran}
+            </span>
+          </td>
+          <td class="p-3 text-center">
+            <div class="flex items-center justify-center gap-1.5">
+              <button onclick="sendWhatsAppBilling('${c.ID_Pelanggan}')" title="Kirim Pesan WhatsApp" class="p-2 bg-emerald-50 text-emerald-600 hover:bg-emerald-600 hover:text-white rounded-lg transition">
+                <i class="fa-brands fa-whatsapp text-sm"></i>
+              </button>
+              <button onclick="editCustomer('${c.ID_Pelanggan}')" title="Edit Data" class="p-2 bg-blue-50 text-blue-600 hover:bg-blue-600 hover:text-white rounded-lg transition">
+                <i class="fa-solid fa-pen-to-square text-xs"></i>
+              </button>
+              <button onclick="deleteCustomerConfirm('${c.ID_Pelanggan}')" title="Hapus Data" class="p-2 bg-red-50 text-red-600 hover:bg-red-600 hover:text-white rounded-lg transition">
+                <i class="fa-solid fa-trash-can text-xs"></i>
+              </button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function filterCustomerTable() {
+      const query = document.getElementById('searchCustomerInput').value.toLowerCase();
+      const statusPay = document.getElementById('filterStatusPay').value;
+
+      const filtered = APP_STATE.customers.filter(c => {
+        const matchesQuery = 
+          (c.Nama_Pelanggan && c.Nama_Pelanggan.toLowerCase().includes(query)) ||
+          (c.No_WhatsApp && c.No_WhatsApp.includes(query)) ||
+          (c.Alamat && c.Alamat.toLowerCase().includes(query)) ||
+          (c.ID_Pelanggan && c.ID_Pelanggan.toLowerCase().includes(query));
+
+        const matchesPay = statusPay === 'ALL' || c.Status_Pembayaran === statusPay;
+
+        return matchesQuery && matchesPay;
+      });
+
+      renderCustomerTable(filtered);
+    }
+
+    function renderCashInTable() {
+      const tbody = document.getElementById('tableCashInBody');
+      tbody.innerHTML = '';
+      if (APP_STATE.cashIn.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400 font-semibold">Belum ada catatan kas masuk.</td></tr>';
+        return;
+      }
+      APP_STATE.cashIn.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="p-3 font-mono text-slate-400">${item.ID_Transaksi}</td>
+          <td class="p-3 font-bold text-slate-700">${item.Tanggal}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-emerald-50 text-emerald-700">${item.Kategori}</span></td>
+          <td class="p-3 text-slate-700 font-medium">${item.Keterangan}</td>
+          <td class="p-3 text-slate-600 font-semibold">${item.Metode_Bayar || '-'}</td>
+          <td class="p-3 text-right font-black text-emerald-600">${formatRupiah(item.Jumlah)}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteCashTransaction('IN', '${item.ID_Transaksi}')" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderCashOutTable() {
+      const tbody = document.getElementById('tableCashOutBody');
+      tbody.innerHTML = '';
+      if (APP_STATE.cashOut.length === 0) {
+        tbody.innerHTML = '<tr><td colspan="7" class="p-6 text-center text-slate-400 font-semibold">Belum ada catatan kas keluar.</td></tr>';
+        return;
+      }
+      APP_STATE.cashOut.forEach(item => {
+        const tr = document.createElement('tr');
+        tr.className = 'hover:bg-slate-50 transition';
+        tr.innerHTML = `
+          <td class="p-3 font-mono text-slate-400">${item.ID_Transaksi}</td>
+          <td class="p-3 font-bold text-slate-700">${item.Tanggal}</td>
+          <td class="p-3"><span class="px-2 py-0.5 rounded-full text-[10px] font-bold bg-red-50 text-red-700">${item.Kategori}</span></td>
+          <td class="p-3 text-slate-700 font-medium">${item.Keterangan}</td>
+          <td class="p-3 text-slate-600 font-semibold">${item.Sumber_Dana || '-'}</td>
+          <td class="p-3 text-right font-black text-red-600">${formatRupiah(item.Jumlah)}</td>
+          <td class="p-3 text-center">
+            <button onclick="deleteCashTransaction('OUT', '${item.ID_Transaksi}')" class="p-1.5 text-red-500 hover:bg-red-50 rounded-lg"><i class="fa-solid fa-trash-can"></i></button>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    function renderPackagesList() {
+      const container = document.getElementById('packageCardsContainer');
+      const select = document.getElementById('cust_PaketSelect');
+      container.innerHTML = '';
+      select.innerHTML = '<option value="">-- Pilih Paket Internet --</option>';
+
+      APP_STATE.packages.forEach((pkg, idx) => {
+        // Render Select Option
+        const opt = document.createElement('option');
+        opt.value = `${pkg.Nama_Paket} (${pkg.Kecepatan})`;
+        opt.dataset.price = pkg.Harga;
+        opt.textContent = `${pkg.Nama_Paket} - ${pkg.Kecepatan} (${formatRupiah(pkg.Harga)})`;
+        select.appendChild(opt);
+
+        // Render Card in Settings
+        const card = document.createElement('div');
+        card.className = 'glass-card p-4 rounded-2xl border border-slate-200 space-y-3 relative';
+        card.innerHTML = `
+          <div class="flex justify-between items-center">
+            <span class="font-mono text-[10px] font-bold text-slate-400">#${pkg.ID_Paket || idx+1}</span>
+            <button onclick="removePackageRow(${idx})" class="text-red-500 hover:text-red-700 text-xs font-bold"><i class="fa-solid fa-trash-can"></i> Hapus</button>
+          </div>
+          <div>
+            <label class="block text-[11px] font-bold text-slate-600 mb-1">Nama Paket</label>
+            <input type="text" value="${pkg.Nama_Paket || ''}" onchange="APP_STATE.packages[${idx}].Nama_Paket = this.value" class="w-full p-2 border rounded-xl font-bold text-xs">
+          </div>
+          <div class="grid grid-cols-2 gap-2">
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Speed</label>
+              <input type="text" value="${pkg.Kecepatan || ''}" onchange="APP_STATE.packages[${idx}].Kecepatan = this.value" placeholder="20 Mbps" class="w-full p-2 border rounded-xl font-semibold text-xs">
+            </div>
+            <div>
+              <label class="block text-[11px] font-bold text-slate-600 mb-1">Tarif (Rp)</label>
+              <input type="number" value="${pkg.Harga || 0}" onchange="APP_STATE.packages[${idx}].Harga = Number(this.value)" class="w-full p-2 border rounded-xl font-black text-blue-600 text-xs">
+            </div>
+          </div>
+        `;
+        container.appendChild(card);
+      });
+    }
+
+    function addNewPackageRow() {
+      APP_STATE.packages.push({
+        ID_Paket: 'PKG-0' + (APP_STATE.packages.length + 1),
+        Nama_Paket: 'Paket Baru',
+        Kecepatan: '25 Mbps',
+        Harga: 175000
+      });
+      renderPackagesList();
+    }
+
+    function removePackageRow(index) {
+      APP_STATE.packages.splice(index, 1);
+      renderPackagesList();
+    }
+
+    function saveAllPackages() {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            showToast(res.message, 'success');
+            refreshDataFromServer();
+          })
+          .withFailureHandler((err) => showToast(err.message, 'error'))
+          .savePackagesList(APP_STATE.packages);
+      } else {
+        showToast('Paket berhasil disimpan (Demo)', 'success');
+        renderPackagesList();
+      }
+    }
+
+    function openCustomerModal() {
+      document.getElementById('formCustomer').reset();
+      document.getElementById('cust_ID').value = '';
+      document.getElementById('custPhotoHidden').value = '';
+      document.getElementById('custPhotoPreview').innerHTML = '<i class="fa-solid fa-user text-3xl text-slate-400"></i>';
+      document.getElementById('custModalTitle').textContent = 'Tambah Pelanggan Baru';
+      document.getElementById('customerModal').classList.remove('hidden');
+    }
+
+    function closeCustomerModal() {
+      document.getElementById('customerModal').classList.add('hidden');
+    }
+
+    function onCustomerPackageChange() {
+      const select = document.getElementById('cust_PaketSelect');
+      const selectedOption = select.options[select.selectedIndex];
+      if (selectedOption && selectedOption.dataset.price) {
+        document.getElementById('cust_Harga').value = selectedOption.dataset.price;
+      }
+    }
+
+    function editCustomer(customerId) {
+      const cust = APP_STATE.customers.find(c => String(c.ID_Pelanggan) === String(customerId));
+      if (!cust) return;
+
+      openCustomerModal();
+      document.getElementById('custModalTitle').textContent = 'Edit Data Pelanggan: ' + cust.Nama_Pelanggan;
+      document.getElementById('cust_ID').value = cust.ID_Pelanggan;
+      document.getElementById('cust_Nama').value = cust.Nama_Pelanggan;
+      document.getElementById('cust_WA').value = cust.No_WhatsApp;
+      document.getElementById('cust_Alamat').value = cust.Alamat;
+      document.getElementById('cust_PaketSelect').value = cust.Paket_Internet;
+      document.getElementById('cust_Harga').value = cust.Harga_Paket;
+      document.getElementById('cust_TglPasang').value = cust.Tgl_Pemasangan;
+      document.getElementById('cust_TglTempo').value = cust.Tgl_Jatuh_Tempo;
+      document.getElementById('cust_StatusPelanggan').value = cust.Status_Pelanggan || 'Aktif';
+      document.getElementById('cust_StatusBayar').value = cust.Status_Pembayaran || 'Belum Bayar';
+      document.getElementById('cust_Catatan').value = cust.Catatan || '';
+      
+      if (cust.Foto_Pelanggan) {
+        document.getElementById('custPhotoHidden').value = cust.Foto_Pelanggan;
+        document.getElementById('custPhotoPreview').innerHTML = `<img src="${cust.Foto_Pelanggan}" class="w-full h-full object-cover">`;
+      }
+    }
+
+    function handleSaveCustomer(e) {
+      e.preventDefault();
+      const btn = document.getElementById('btnSaveCust');
+      btn.disabled = true;
+      btn.innerHTML = '<i class="fa-solid fa-spinner fa-spin"></i> Menyimpan...';
+
+      const customerObj = {
+        ID_Pelanggan: document.getElementById('cust_ID').value,
+        Nama_Pelanggan: document.getElementById('cust_Nama').value,
+        No_WhatsApp: document.getElementById('cust_WA').value,
+        Alamat: document.getElementById('cust_Alamat').value,
+        Paket_Internet: document.getElementById('cust_PaketSelect').value,
+        Harga_Paket: Number(document.getElementById('cust_Harga').value),
+        Tgl_Pemasangan: document.getElementById('cust_TglPasang').value,
+        Tgl_Jatuh_Tempo: document.getElementById('cust_TglTempo').value,
+        Status_Pelanggan: document.getElementById('cust_StatusPelanggan').value,
+        Status_Pembayaran: document.getElementById('cust_StatusBayar').value,
+        Foto_Pelanggan: document.getElementById('custPhotoHidden').value,
+        Catatan: document.getElementById('cust_Catatan').value
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Simpan Pelanggan</span>';
+            if (res.success) {
+              showToast(res.message, 'success');
+              closeCustomerModal();
+              refreshDataFromServer();
+            } else {
+              showToast(res.message, 'error');
+            }
+          })
+          .withFailureHandler((err) => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Simpan Pelanggan</span>';
+            showToast(err.message, 'error');
+          })
+          .saveCustomer(customerObj);
+      } else {
+        // Mock local update
+        if (customerObj.ID_Pelanggan) {
+          const idx = APP_STATE.customers.findIndex(c => c.ID_Pelanggan === customerObj.ID_Pelanggan);
+          if (idx !== -1) APP_STATE.customers[idx] = customerObj;
+        } else {
+          customerObj.ID_Pelanggan = 'JD-' + Math.floor(100000 + Math.random() * 900000);
+          APP_STATE.customers.unshift(customerObj);
+        }
+        btn.disabled = false;
+        btn.innerHTML = '<i class="fa-solid fa-floppy-disk"></i> <span>Simpan Pelanggan</span>';
+        showToast('Data pelanggan berhasil disimpan (Demo)', 'success');
+        closeCustomerModal();
+        renderAllViews();
+      }
+    }
+
+    function deleteCustomerConfirm(id) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            showToast(res.message, 'success');
+            refreshDataFromServer();
+          })
+          .withFailureHandler((err) => showToast(err.message, 'error'))
+          .deleteCustomer(id);
+      } else {
+        APP_STATE.customers = APP_STATE.customers.filter(c => c.ID_Pelanggan !== id);
+        showToast('Pelanggan berhasil dihapus (Demo)', 'info');
+        renderAllViews();
+      }
+    }
+
+    function cleanPhone(phone) {
+      let p = String(phone || '').replace(/[^0-9]/g, '');
+      if (p.startsWith('0')) {
+        p = '62' + p.slice(1);
+      }
+      return p;
+    }
+
+    function sendWhatsAppBilling(customerId) {
+      const cust = APP_STATE.customers.find(c => String(c.ID_Pelanggan) === String(customerId));
+      if (!cust) return;
+
+      const s = APP_STATE.settings;
+      const appName = s.app_name || 'JDATA WIFI';
+      const briAcc = s.bri_acc || '1234-01-000000-50-1';
+      const briName = s.bri_name || 'JDATA NETWORK';
+      const mandiriAcc = s.mandiri_acc || '140-00-1234567-8';
+      const mandiriName = s.mandiri_name || 'JDATA NETWORK';
+      const danaNum = s.dana_num || '081234567890';
+      const gopayNum = s.gopay_num || '081234567890';
+      const qrisInfo = s.qris_info || 'QRIS All Merchant';
+
+      const message = 
+`*TAGIHAN IURAN INTERNET WIFI ${appName.toUpperCase()}*
+----------------------------------------
+Yth. Bapak/Ibu *${cust.Nama_Pelanggan}*,
+ID Pelanggan: *${cust.ID_Pelanggan}*
+
+Berikut adalah rincian tagihan langganan WiFi Anda:
+- Paket: *${cust.Paket_Internet}*
+- Total Tagihan: *${formatRupiah(cust.Harga_Paket)}*
+- Tanggal Jatuh Tempo: *${cust.Tgl_Jatuh_Tempo}*
+- Status: *${cust.Status_Pembayaran.toUpperCase()}*
+
+----------------------------------------
+💳 *METODE PEMBAYARAN DAPAT MELALUI:*
+
+1️⃣ *Bank BRI*
+   No. Rek: *${briAcc}*
+   a/n: *${briName}*
+
+2️⃣ *Bank Mandiri*
+   No. Rek: *${mandiriAcc}*
+   a/n: *${mandiriName}*
+
+3️⃣ *E-Wallet (DANA / GOPAY)*
+   DANA: *${danaNum}*
+   GoPay: *${gopayNum}*
+
+4️⃣ *QRIS All Merchant*
+   (${qrisInfo})
+
+----------------------------------------
+*Catatan:*
+Setelah melakukan pembayaran, mohon kirimkan foto/screenshot bukti transfer melalui WhatsApp ini agar status akun segera diperbarui. 
+
+Terima kasih atas kerja sama dan kepercayaannya menggunakan layanan *${appName}*.`;
+
+      const encodedMsg = encodeURIComponent(message);
+      const waUrl = `https://wa.me/${cleanPhone(cust.No_WhatsApp)}?text=${encodedMsg}`;
+      window.open(waUrl, '_blank');
+      showToast('Pesan tagihan WhatsApp berhasil disiapkan', 'info');
+    }
+
+    function exportCustomersToExcel() {
+      if (APP_STATE.customers.length === 0) {
+        showToast('Tidak ada data pelanggan untuk di-export', 'warning');
+        return;
+      }
+      const exportData = APP_STATE.customers.map(c => ({
+        'ID Pelanggan': c.ID_Pelanggan,
+        'Nama Pelanggan': c.Nama_Pelanggan,
+        'No WhatsApp': c.No_WhatsApp,
+        'Alamat': c.Alamat,
+        'Paket Internet': c.Paket_Internet,
+        'Harga Paket': c.Harga_Paket,
+        'Tgl Pemasangan': c.Tgl_Pemasangan,
+        'Tgl Jatuh Tempo': c.Tgl_Jatuh_Tempo,
+        'Status Pelanggan': c.Status_Pelanggan,
+        'Status Pembayaran': c.Status_Pembayaran,
+        'Catatan': c.Catatan || ''
+      }));
+
+      const ws = XLSX.utils.json_to_sheet(exportData);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Data_Pelanggan");
+      XLSX.writeFile(wb, `Data_Pelanggan_JDATA_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast('File Excel data pelanggan berhasil didownload', 'success');
+    }
+
+    function importCustomersFromExcel(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const data = new Uint8Array(e.target.result);
+          const workbook = XLSX.read(data, { type: 'array' });
+          const firstSheetName = workbook.SheetNames[0];
+          const worksheet = workbook.Sheets[firstSheetName];
+          const rawRows = XLSX.utils.sheet_to_json(worksheet);
+
+          if (rawRows.length === 0) {
+            showToast('File Excel kosong', 'warning');
+            return;
+          }
+
+          const parsedList = rawRows.map(r => ({
+            ID_Pelanggan: r['ID Pelanggan'] || r['ID_Pelanggan'] || ('JD-' + Math.floor(100000 + Math.random()*900000)),
+            Nama_Pelanggan: r['Nama Pelanggan'] || r['Nama_Pelanggan'] || '',
+            No_WhatsApp: r['No WhatsApp'] || r['No_WhatsApp'] || '',
+            Alamat: r['Alamat'] || '',
+            Paket_Internet: r['Paket Internet'] || r['Paket_Internet'] || 'Paket Standar',
+            Harga_Paket: Number(r['Harga Paket'] || r['Harga_Paket'] || 0),
+            Tgl_Pemasangan: r['Tgl Pemasangan'] || r['Tgl_Pemasangan'] || new Date().toISOString().split('T')[0],
+            Tgl_Jatuh_Tempo: r['Tgl Jatuh Tempo'] || r['Tgl_Jatuh_Tempo'] || new Date().toISOString().split('T')[0],
+            Status_Pelanggan: r['Status Pelanggan'] || r['Status_Pelanggan'] || 'Aktif',
+            Status_Pembayaran: r['Status Pembayaran'] || r['Status_Pembayaran'] || 'Belum Bayar',
+            Catatan: r['Catatan'] || ''
+          }));
+
+          if (typeof google !== 'undefined' && google.script && google.script.run) {
+            google.script.run
+              .withSuccessHandler((res) => {
+                showToast(res.message, 'success');
+                refreshDataFromServer();
+              })
+              .withFailureHandler((err) => showToast(err.message, 'error'))
+              .importCustomersBulk(parsedList);
+          } else {
+            APP_STATE.customers = [...APP_STATE.customers, ...parsedList];
+            showToast(`${parsedList.length} data berhasil di-import (Demo)`, 'success');
+            renderAllViews();
+          }
+        } catch (err) {
+          showToast('Format Excel tidak valid: ' + err.message, 'error');
+        }
+      };
+      reader.readAsArrayBuffer(file);
+    }
+
+    function exportCashInToExcel() {
+      const ws = XLSX.utils.json_to_sheet(APP_STATE.cashIn);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Kas_Masuk");
+      XLSX.writeFile(wb, `Kas_Masuk_JDATA_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast('Excel Kas Masuk berhasil diexport', 'success');
+    }
+
+    function exportCashOutToExcel() {
+      const ws = XLSX.utils.json_to_sheet(APP_STATE.cashOut);
+      const wb = XLSX.utils.book_new();
+      XLSX.utils.book_append_sheet(wb, ws, "Kas_Keluar");
+      XLSX.writeFile(wb, `Kas_Keluar_JDATA_${new Date().toISOString().slice(0,10)}.xlsx`);
+      showToast('Excel Kas Keluar berhasil diexport', 'success');
+    }
+
+    function openCashInModal() {
+      const custSelect = document.getElementById('in_CustSelect');
+      custSelect.innerHTML = '<option value="">-- Bukan Pembayaran Pelanggan Terdaftar --</option>';
+      APP_STATE.customers.forEach(c => {
+        const opt = document.createElement('option');
+        opt.value = c.ID_Pelanggan;
+        opt.dataset.nama = c.Nama_Pelanggan;
+        opt.dataset.price = c.Harga_Paket;
+        opt.textContent = `${c.Nama_Pelanggan} (${c.ID_Pelanggan}) - Tagihan: ${formatRupiah(c.Harga_Paket)}`;
+        custSelect.appendChild(opt);
+      });
+      document.getElementById('cashInModal').classList.remove('hidden');
+    }
+
+    function closeCashInModal() {
+      document.getElementById('cashInModal').classList.add('hidden');
+    }
+
+    function onCashInCustSelectChange() {
+      const select = document.getElementById('in_CustSelect');
+      const selected = select.options[select.selectedIndex];
+      if (selected && selected.value) {
+        document.getElementById('in_Keterangan').value = `Iuran WiFi Bulanan a/n ${selected.dataset.nama}`;
+        document.getElementById('in_Jumlah').value = selected.dataset.price || 0;
+      }
+    }
+
+    function handleSaveCashIn(e) {
+      e.preventDefault();
+      const transaction = {
+        Tanggal: document.getElementById('in_Tanggal').value,
+        Kategori: document.getElementById('in_Kategori').value,
+        Keterangan: document.getElementById('in_Keterangan').value,
+        Jumlah: Number(document.getElementById('in_Jumlah').value),
+        Metode_Bayar: document.getElementById('in_Metode').value,
+        ID_Pelanggan: document.getElementById('in_CustSelect').value
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            showToast(res.message, 'success');
+            closeCashInModal();
+            refreshDataFromServer();
+          })
+          .withFailureHandler((err) => showToast(err.message, 'error'))
+          .saveCashTransaction('IN', transaction);
+      } else {
+        transaction.ID_Transaksi = 'KM-' + Date.now().toString().slice(-5);
+        APP_STATE.cashIn.unshift(transaction);
+        if (transaction.ID_Pelanggan) {
+          const cust = APP_STATE.customers.find(c => c.ID_Pelanggan === transaction.ID_Pelanggan);
+          if (cust) cust.Status_Pembayaran = 'Lunas';
+        }
+        showToast('Kas masuk tersimpan (Demo)', 'success');
+        closeCashInModal();
+        renderAllViews();
+      }
+    }
+
+    function openCashOutModal() {
+      document.getElementById('cashOutModal').classList.remove('hidden');
+    }
+
+    function closeCashOutModal() {
+      document.getElementById('cashOutModal').classList.add('hidden');
+    }
+
+    function handleSaveCashOut(e) {
+      e.preventDefault();
+      const transaction = {
+        Tanggal: document.getElementById('out_Tanggal').value,
+        Kategori: document.getElementById('out_Kategori').value,
+        Keterangan: document.getElementById('out_Keterangan').value,
+        Jumlah: Number(document.getElementById('out_Jumlah').value),
+        Sumber_Dana: document.getElementById('out_Sumber').value
+      };
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            showToast(res.message, 'success');
+            closeCashOutModal();
+            refreshDataFromServer();
+          })
+          .withFailureHandler((err) => showToast(err.message, 'error'))
+          .saveCashTransaction('OUT', transaction);
+      } else {
+        transaction.ID_Transaksi = 'KK-' + Date.now().toString().slice(-5);
+        APP_STATE.cashOut.unshift(transaction);
+        showToast('Kas keluar tersimpan (Demo)', 'success');
+        closeCashOutModal();
+        renderAllViews();
+      }
+    }
+
+    function deleteCashTransaction(type, id) {
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            showToast(res.message, 'success');
+            refreshDataFromServer();
+          })
+          .withFailureHandler((err) => showToast(err.message, 'error'))
+          .deleteTransaction(type, id);
+      } else {
+        if (type === 'IN') APP_STATE.cashIn = APP_STATE.cashIn.filter(x => x.ID_Transaksi !== id);
+        if (type === 'OUT') APP_STATE.cashOut = APP_STATE.cashOut.filter(x => x.ID_Transaksi !== id);
+        showToast('Transaksi dihapus (Demo)', 'info');
+        renderAllViews();
+      }
+    }
+
+    function handleFileImageUpload(event, previewId, hiddenInputId) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        const base64 = e.target.result;
+        document.getElementById(hiddenInputId).value = base64;
+        document.getElementById(previewId).innerHTML = `<img src="${base64}" class="w-full h-full object-cover">`;
+      };
+      reader.readAsDataURL(file);
+    }
+
+    function startCameraCapture(targetType) {
+      APP_STATE.cameraTarget = targetType;
+      const modal = document.getElementById('cameraModal');
+      const video = document.getElementById('webcamVideo');
+      modal.classList.remove('hidden');
+
+      if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+        navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' }, audio: false })
+          .then(stream => {
+            APP_STATE.localVideoStream = stream;
+            video.srcObject = stream;
+          })
+          .catch(err => {
+            showToast('Tidak dapat mengakses kamera: ' + err.message, 'error');
+            stopCameraStream();
+          });
+      } else {
+        showToast('Browser Anda tidak mendukung akses kamera.', 'error');
+      }
+    }
+
+    function stopCameraStream() {
+      if (APP_STATE.localVideoStream) {
+        APP_STATE.localVideoStream.getTracks().forEach(track => track.stop());
+        APP_STATE.localVideoStream = null;
+      }
+      document.getElementById('cameraModal').classList.add('hidden');
+    }
+
+    function takeSnapshot() {
+      const video = document.getElementById('webcamVideo');
+      const canvas = document.getElementById('webcamCanvas');
+      canvas.width = video.videoWidth || 640;
+      canvas.height = video.videoHeight || 480;
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const base64 = canvas.toDataURL('image/jpeg', 0.85);
+
+      if (APP_STATE.cameraTarget === 'custPhoto') {
+        document.getElementById('custPhotoHidden').value = base64;
+        document.getElementById('custPhotoPreview').innerHTML = `<img src="${base64}" class="w-full h-full object-cover">`;
+      } else if (APP_STATE.cameraTarget === 'companyLogo') {
+        document.getElementById('logoModalHidden').value = base64;
+        document.getElementById('logoModalPreview').innerHTML = `<img src="${base64}" class="w-full h-full object-cover">`;
+      }
+
+      stopCameraStream();
+      showToast('Foto berhasil diambil dari kamera!', 'success');
+    }
+
+    function openLogoModal() {
+      document.getElementById('logoModal').classList.remove('hidden');
+    }
+
+    function closeLogoModal() {
+      document.getElementById('logoModal').classList.add('hidden');
+    }
+
+    function saveCompanyLogo() {
+      const logoBase64 = document.getElementById('logoModalHidden').value;
+      if (!logoBase64) {
+        showToast('Pilih atau jepret foto logo terlebih dahulu', 'warning');
+        return;
+      }
+      APP_STATE.settings.logo_base64 = logoBase64;
+      saveApplicationSettings();
+      closeLogoModal();
+    }
+
+    function updateAppLogos() {
+      const logo = APP_STATE.settings.logo_base64;
+      const name = APP_STATE.settings.app_name || 'JDATA WIFI';
+
+      document.getElementById('appTitleText').textContent = name;
+      document.getElementById('loginAppName').textContent = name;
+
+      if (logo) {
+        const imgTag = `<img src="${logo}" class="w-full h-full object-cover">`;
+        document.getElementById('sidebarLogo').innerHTML = imgTag;
+        document.getElementById('loginLogoPreview').innerHTML = imgTag;
+        document.getElementById('settingLogoPreview').innerHTML = imgTag;
+        document.getElementById('logoModalPreview').innerHTML = imgTag;
+      }
+    }
+
+    function populateSettingsInputs() {
+      const s = APP_STATE.settings;
+      if (document.getElementById('settingAppName')) document.getElementById('settingAppName').value = s.app_name || 'JDATA WIFI';
+      if (document.getElementById('settingBriAcc')) document.getElementById('settingBriAcc').value = s.bri_acc || '';
+      if (document.getElementById('settingBriName')) document.getElementById('settingBriName').value = s.bri_name || '';
+      if (document.getElementById('settingMandiriAcc')) document.getElementById('settingMandiriAcc').value = s.mandiri_acc || '';
+      if (document.getElementById('settingMandiriName')) document.getElementById('settingMandiriName').value = s.mandiri_name || '';
+      if (document.getElementById('settingDanaNum')) document.getElementById('settingDanaNum').value = s.dana_num || '';
+      if (document.getElementById('settingGopayNum')) document.getElementById('settingGopayNum').value = s.gopay_num || '';
+      if (document.getElementById('settingQrisInfo')) document.getElementById('settingQrisInfo').value = s.qris_info || '';
+
+      // Update widget bank
+      if (document.getElementById('disp_bri_acc')) document.getElementById('disp_bri_acc').textContent = s.bri_acc || '-';
+      if (document.getElementById('disp_bri_name')) document.getElementById('disp_bri_name').textContent = 'a/n ' + (s.bri_name || '-');
+      if (document.getElementById('disp_mandiri_acc')) document.getElementById('disp_mandiri_acc').textContent = s.mandiri_acc || '-';
+      if (document.getElementById('disp_mandiri_name')) document.getElementById('disp_mandiri_name').textContent = 'a/n ' + (s.mandiri_name || '-');
+    }
+
+    function saveApplicationSettings() {
+      const newConfig = {
+        app_name: document.getElementById('settingAppName').value,
+        bri_acc: document.getElementById('settingBriAcc').value,
+        bri_name: document.getElementById('settingBriName').value,
+        mandiri_acc: document.getElementById('settingMandiriAcc').value,
+        mandiri_name: document.getElementById('settingMandiriName').value,
+        dana_num: document.getElementById('settingDanaNum').value,
+        gopay_num: document.getElementById('settingGopayNum').value,
+        qris_info: document.getElementById('settingQrisInfo').value,
+      };
+
+      const newPass = document.getElementById('settingAdminPass').value;
+      if (newPass && newPass.trim() !== '') {
+        newConfig.admin_password = newPass.trim();
+      }
+
+      if (APP_STATE.settings.logo_base64) {
+        newConfig.logo_base64 = APP_STATE.settings.logo_base64;
+      }
+
+      if (typeof google !== 'undefined' && google.script && google.script.run) {
+        google.script.run
+          .withSuccessHandler((res) => {
+            showToast(res.message, 'success');
+            refreshDataFromServer();
+          })
+          .withFailureHandler((err) => showToast(err.message, 'error'))
+          .saveAppSettings(newConfig);
+      } else {
+        APP_STATE.settings = { ...APP_STATE.settings, ...newConfig };
+        showToast('Pengaturan disimpan (Demo)', 'success');
+        renderAllViews();
+      }
+    }
+  </script>
+</body>
+</html>
